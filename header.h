@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/01 10:06:59 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/01 12:40:45 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/01 16:39:47 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,13 @@
 
 #define	ICMP_FILTER			1
 
+/*
+#define HDR_SZ				8
+*/
 #define BODY_SZ				56 
-#define TTL					64
+
+#define MAX_HOP				64
+#define PROB_NB				3
 
 #define FLGS				"hV"
 #define OPT_SZ				2
@@ -58,8 +63,8 @@ typedef enum				e_err {
 	E_TARG,
 	E_SCK_CRE,
 	E_SCK_OPT,
-//	E_SND,
-//	E_REC,
+	E_SND,
+	E_REC,
 //	E_ALLOC,
 	E_ARG,
 //	E_DUP,
@@ -73,6 +78,15 @@ typedef struct					s_targ {
 	char						*name;
 }								t_targ;
 
+typedef struct					s_icmp_pkt {
+	uint8_t						type;
+	uint8_t						code;
+	int16_t						sum;
+	uint16_t					id;
+	uint16_t					seq;
+	uint8_t						body[BODY_SZ];
+} __attribute__((packed))		t_icmp_pkt;
+
 typedef struct					s_args {
 	size_t						flags;
 	size_t						opts_flags;
@@ -82,11 +96,8 @@ typedef struct					s_args {
 typedef struct					s_glob {
 	t_targ						targ;
 	int							sock;
-//	struct timeval				start;
-//	t_icmp_pkt					pkt;
-//	t_pngs						pngs;
-//	t_acc						acc;
-//	t_errors					errors;
+	t_icmp_pkt					pkt;
+	size_t						r_count;
 	t_args						args;
 }								t_glob;
 

@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/01 09:57:43 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/01 12:33:43 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/01 16:40:17 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,36 +142,50 @@ static void		find_targ(char *arg, t_glob *glob) {
 }
 
 static void		create_sock(t_glob *glob) {
-	unsigned int	ttl;
 	uint32_t		filt = 1 << ICMP_ECHO;
 
-	ttl = TTL;
 	if ((glob->sock = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
 		error(E_SCK_CRE, "Socket", "Can't be created", NULL);
-		/*
-	opt_set(O_T, T_UINT, &ttl);
-	if (ttl.uint > 255)
-		error(E_SCK_OPT, "Socket", "TTL value is too high", NULL);
-		*/
-	if (setsockopt(glob->sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(uint8_t))
-			|| setsockopt(glob->sock, SOL_RAW, ICMP_FILTER, &filt, sizeof(uint32_t)))
+	if (setsockopt(glob->sock, SOL_RAW, ICMP_FILTER, &filt, sizeof(uint32_t)))
 		error(E_SCK_OPT, "Socket", "Can't be configured", NULL);
 }
 
+static void		conf_ttl(t_glob *glob, unsigned int ttl) {
 /*
-static void		fill_body(void) {
-	for (size_t i = 0; i < glob.args.body_sz; ++i) 
-		glob.pkt.body[i] = glob.args.pat.dat[i % glob.args.pat.len];
+	if (ttl > 255)
+		error(E_SCK_OPT, "Socket", "TTL value is too high", NULL);
+	*/
+	if (setsockopt(glob->sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(uint8_t)))
+		error(E_SCK_OPT, "Socket", "Can't configure TTL", NULL);
 }
-*/
 
-static void		init_glob(t_glob *glob) {
-	(void)glob;
+uint16_t	checksum(void *body, int size) {
+	uint16_t	*data = body;
+	uint32_t	result = 0;
+
+	for (; size > 1; size -= 2)
+		result += *(data++);		
+	if (size)
+		result += *((uint8_t *)data);
+	while (result >> 16)
+		result = (result & 0xffff) + (result >> 16);
+	return (~result);
+}
+
+void		new_probe(t_glob *glob, unsigned int ttl) {
+	static unsigned int		old_ttl = 0;
+
+	if (ttl != old_ttl) {
+		conf_ttl(glob, ttl);
+		old_ttl = ttl;
+	}
+	if (sendto(glob->sock, &glob->pkt, sizeof(t_icmp_pkt), 0, (struct sockaddr *)&glob->targ.in, sizeof(struct sockaddr)) < 0)
+		error(E_SND, "Ping", "Can't send packet", NULL);
 }
 
 int			main(int argc, char **argv) {
-	t_glob		glob = { 0 };
-	t_bool		no_addr;
+	t_glob			glob = { 0 };
+	t_bool			no_addr;
 
 	if (argc < 2)
 		error(E_ARG, "Command line", "Need argument (-h for help)", NULL);
@@ -184,12 +198,27 @@ int			main(int argc, char **argv) {
 		exit(0);
 	} else if (no_addr)
 		error(E_ARG, "Command line", "No domain or address specified", NULL);
-	init_glob(&glob);
 	if (getuid())
 		error(E_PERM, "Permissions", "Need to be run with sudo", NULL);
 	find_targ(argv[argc - 2], &glob);
 	create_sock(&glob);
-	//ping(0);
-	//while (TRUE)
-//		pong();
+	glob.pkt.type = ICMP_ECHO;
+	glob.pkt.id = htons(getpid());
+	glob.pkt.sum = checksum(&glob.pkt, sizeof(t_icmp_pkt));
+	for (unsigned int i = 1; i <= MAX_HOP; ++i) {
+		glob.r_count = 0;
+		for (unsigned int j = 0; j < PROB_NB; ++j)
+			new_probe(&glob, i);
+		for (unsigned int j = 0; j < PROB_NB; ++j) {
+			t_icmp_pkt			r_pkt = { 0 };
+			struct sockaddr		r_addr = { 0 };
+			socklen_t			r_addr_sz = sizeof(struct sockaddr);
+			int					ret;
+
+			if ((ret = recvfrom(glob.sock, &r_pkt, sizeof(t_icmp_pkt), 0, &r_addr, &r_addr_sz)) < 0)
+				error(E_REC, "Ping", "Can't receive packet", NULL);
+			printf("rec ");
+		}
+		printf("\n");
+	}
 }
