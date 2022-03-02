@@ -6,113 +6,11 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/01 09:57:43 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/02 13:05:23 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/02 19:49:32 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-//Return value ?
-
 #include "header.h"
-
-static void			error(t_err ret, char *fnc, char *msg, char *quote) {
-	fprintf(stderr, "Error: ");	
-	if (fnc)
-		fprintf(stderr, "%s: ", fnc);	
-	fprintf(stderr, "%s", msg);
-	if (quote)
-		fprintf(stderr, " \"%s\"", quote);
-	fprintf(stderr, "\n");
-	if (ret)
-		exit(2);
-}
-
-size_t			str_len(char *str) {
-	size_t		len;
-
-	for (len = 0; str[len]; ++len);
-	return (len);
-}
-
-t_bool		flag_set(t_flag flg, t_glob *glob) {
-	return (!!(glob->args.flags & (0x1 << flg)));
-}
-
-t_bool		opt_set(t_flag flg, t_glob *glob, unsigned int *val) {
-	if (val && glob->args.opts_flags & (0x1 << flg)) {
-		*val = glob->args.opts[flg];
-		return (TRUE);
-	}
-	return (FALSE);
-}
-
-static t_bool		add_flag(char *arg, t_glob *glob) {
-	t_bool		found;
-	size_t		flgs = 0;
-
-	while (*++arg) {
-		found = FALSE;
-		for (size_t i = 0; i < str_len(FLGS); ++i) {
-			if (*arg == FLGS[i]) {
-				if (flag_set(i, glob))
-					error(E_ARG, "Command line", "Duplicated argument", arg);
-				flgs |= 0x1 << i;
-				found = TRUE;
-				break;
-			}
-		}
-		if (!found)
-			return (FALSE);
-	}
-	glob->args.flags |= flgs;
-	return (TRUE);
-}
-
-t_bool			str_2_uint(char *str, unsigned int *result) {
-	long		res = 0;
-
-	for (; *str; ++str) {
-		if (*str < '0' || *str > '9')
-			return (TRUE);
-		res *= 10;
-		res += *str - '0';
-		if (res > UINT_MAX)
-			return (TRUE);
-	}
-	*result = res;
-	return (FALSE);
-}
-
-static t_bool		add_opt(char ***arg, t_glob *glob) {
-	if (str_len(**arg) != OPT_SZ)
-		return (FALSE);
-	for (size_t i = 0; i < str_len(OPTS); ++i) {
-		if ((**arg)[1] == OPTS[i]) {
-			if (opt_set(i, glob, NULL))
-				error(E_ARG, "Command line", "Duplicated argument", **arg);
-			if (!*(*arg + 1))
-				error(E_ARG, "Command line", "Need value for option", **arg);
-			if (str_2_uint(*(*arg + 1), &glob->args.opts[i]))
-				error(E_ARG, "Command line", "Bad value for option", **arg);
-			glob->args.opts_flags |= 0x1 << i;
-			++(*arg);
-			return (TRUE);
-		}
-	}
-	return (FALSE);
-}
-
-t_bool		parse_arg(char **arg, t_glob *glob) {
-	for (; *arg; ++arg) {
-		if (**arg != '-') {
-			if (*(arg + 1))
-				error(E_ARG, "Command line", "Unrecognized argument", *arg);
-			return (FALSE);
-		}
-		if (str_len(*arg) < OPT_SZ || (!add_flag(*arg, glob) && !add_opt(&arg, glob)))
-			error(E_ARG, "Command line", "Unrecognized argument", *arg);
-	}
-	return (TRUE);
-}
 
 static struct addrinfo		create_hints(void) {
 	struct addrinfo		hints = { 0 };
@@ -151,28 +49,13 @@ static void		create_sock(t_glob *glob) {
 }
 
 static void		conf_ttl(t_glob *glob, unsigned int ttl) {
-/*
 	if (ttl > 255)
 		error(E_SCK_OPT, "Socket", "TTL value is too high", NULL);
-	*/
 	if (setsockopt(glob->sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(uint8_t)))
 		error(E_SCK_OPT, "Socket", "Can't configure TTL", NULL);
 }
 
-uint16_t	checksum(void *body, int size) {
-	uint16_t	*data = body;
-	uint32_t	result = 0;
-
-	for (; size > 1; size -= 2)
-		result += *(data++);		
-	if (size)
-		result += *((uint8_t *)data);
-	while (result >> 16)
-		result = (result & 0xffff) + (result >> 16);
-	return (~result);
-}
-
-void		new_probe(t_glob *glob, unsigned int ttl) {
+void			new_probe(t_glob *glob, unsigned int ttl) {
 	static unsigned int		old_ttl = 0;
 
 	if (ttl != old_ttl) {
@@ -187,34 +70,6 @@ void		new_probe(t_glob *glob, unsigned int ttl) {
 		error(E_SND, "Ping", "Can't send packet", NULL);
 }
 
-struct timeval	until_now(struct timeval start) {
-	struct timeval		result = { 0 };	
-	struct timeval		end;
-	long long			tmp;
-
-	gettimeofday(&end, NULL);
-	if (start.tv_sec > end.tv_sec)
-		error(E_BCK_TIME, "Clock", "Time goes backward !!!", NULL);
-	result.tv_sec = end.tv_sec - start.tv_sec;
-	if ((tmp = end.tv_usec - start.tv_usec) < 0) {
-		if (result.tv_sec < 1)
-			error(E_BCK_TIME, "Clock", "Time goes backward !!!", NULL);
-		--result.tv_sec;
-		result.tv_usec = 1000000 + tmp;
-	} else
-		result.tv_usec = tmp;
-	return (result);
-}
-
-int			ft_printf(char *form, ...) {
-	static char			buff[BUFF_SZ];
-	va_list				args;
-
-	va_start(args, form);
-	vsprintf(buff, form, args);
-	return (write(STDOUT, buff, str_len(buff)));
-}
-
 int			main(int argc, char **argv) {
 	t_glob			glob = { 0 };
 	struct timeval		sel_timo = {
@@ -222,8 +77,12 @@ int			main(int argc, char **argv) {
 		.tv_usec = SEL_TIMO_MS % 1000 * 1000,
 	};
 	t_bool			no_addr;
+	unsigned int	ttl = MIN_HOP;
+	unsigned int	max_hop = MAX_HOP;
+	unsigned int	prob_nb = PROB_NB;
+	unsigned int	resp_timo = RESP_TIMO;
 
-	if (argc < 2)
+	if (argc < MIN_ARG)
 		error(E_ARG, "Command line", "Need argument (-h for help)", NULL);
 	no_addr = parse_arg(++argv, &glob);
 	if (flag_set(F_H, &glob)) {
@@ -238,28 +97,40 @@ int			main(int argc, char **argv) {
 		error(E_PERM, "Permissions", "Need to be run with sudo", NULL);
 	find_targ(argv[argc - 2], &glob);
 	create_sock(&glob);
+	opt_set(O_F, &glob, &ttl);
+	opt_set(O_M, &glob, &max_hop);
+	if (max_hop < MIN_HOP || ttl < MIN_HOP || ttl > MAX_TTL || max_hop > MAX_TTL)
+		error(E_ARG, "Command line", "Bad TTL value", NULL);
+	opt_set(O_Q, &glob, &prob_nb);
+	if (prob_nb < MIN_PROB_NB || prob_nb > MAX_PROB_NB)
+		error(E_ARG, "Command line", "Bad prob number", NULL);
+	opt_set(O_W, &glob, &resp_timo);
+	if (resp_timo > MAX_RSP_TIMO)
+		error(E_ARG, "Command line", "Bad waiting time", NULL);
 	printf("traceroute to %s (%s), %d hops max\n",
-		glob.targ.name ? glob.targ.name : glob.targ.addr, glob.targ.addr, MAX_HOP);
+		glob.targ.name ? glob.targ.name : glob.targ.addr, glob.targ.addr, max_hop);
 	glob.pkt.type = ICMP_ECHO;
 	glob.pkt.id = htons(getpid());
-	for (unsigned int i = 1; i <= MAX_HOP; ++i) {
+	for (unsigned int i = 0; i < max_hop; ++i) {
 		t_bool				first = TRUE;
 		struct timeval		prob_start = { 0 };
 		struct timeval		duration = { 0 };
 		fd_set				set;
 		t_err				err = E_NO;
+		size_t				miss_count = 0;
+		t_bool				targ_found = FALSE;
 
-		for (unsigned int j = 0; j < PROB_NB; ++j) {
+		for (unsigned int j = 0; j < prob_nb; ++j) {
 			FD_ZERO(&set);
 			FD_SET(glob.sock, &set);
 			select(glob.sock + 1, NULL, &set, NULL, &sel_timo);
 			if (!FD_ISSET(glob.sock, &set))
 				error(E_SEL, "Socket", "Target unable to receive data", NULL);
-			new_probe(&glob, i);
+			new_probe(&glob, i + ttl);
 		}
-		ft_printf(" %2d ", i);
+		ft_printf(" %2d ", i + 1);
 		gettimeofday(&prob_start, NULL);
-		for (size_t r_count = 0; r_count < PROB_NB;) {
+		for (size_t r_count = 0; r_count + miss_count < prob_nb;) {
 			FD_ZERO(&set);
 			FD_SET(glob.sock, &set);
 			duration = until_now(prob_start);
@@ -272,6 +143,7 @@ int			main(int argc, char **argv) {
 
 				if (recvfrom(glob.sock, &r_pkt, sizeof(t_ip_pkt), 0, &r_addr, &r_addr_sz) < 0)
 					error(E_REC, "Ping", "Can't receive packet", NULL);
+				duration = until_now(prob_start);
 				if (r_pkt.icmp_pkt.type != ICMP_ECHOREPLY
 						&& (s_pkt->id != glob.pkt.id || s_pkt->seq != glob.pkt.seq))
 					continue;
@@ -285,20 +157,18 @@ int			main(int argc, char **argv) {
 					ft_printf(" !%c", UNR_ERR[r_pkt.icmp_pkt.code]);
 					err = E_RESP;
 				}
+				if (r_pkt.icmp_pkt.type == ICMP_ECHOREPLY && r_pkt.icmp_pkt.id == glob.pkt.id)
+					targ_found = TRUE;
 				++r_count;
-				if (r_count == PROB_NB) {
-					if ((r_pkt.icmp_pkt.type == ICMP_ECHOREPLY && r_pkt.icmp_pkt.id == glob.pkt.id)
-							|| err) {
-						printf("\n");
-						exit(err);
-					}
-				}
-			} else if ((duration.tv_sec * 1000000 + duration.tv_usec) / (RESP_TIMO_MS * 1000)
-				> (long int)r_count) {
+			} else if (!resp_timo
+					|| (duration.tv_sec * 1000000 + duration.tv_usec) / (resp_timo * 1000000)
+					> (long int)miss_count) {
 				ft_printf("  *");	
-				++r_count;
+				++miss_count;
 			}
 		}
 		printf("\n");
+		if (targ_found || err)
+			exit(err);
 	}
 }

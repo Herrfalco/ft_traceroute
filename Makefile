@@ -1,22 +1,24 @@
 NAME	=	ft_traceroute
-SRCS	=	ft_traceroute.c
+SRCS	=	args.c \
+		ft_traceroute.c \
+		utils.c
 OBJS	=	$(SRCS:.c=.o)
-CC		=	gcc
+CC	=	gcc
 CFLAGS	=	-Wall -Wextra -Werror
-RM		=	rm -rf
+RM	=	rm -rf
 
-all		:	$(NAME)
+all	:	$(NAME)
 
 $(NAME)	:	$(OBJS)
-			$(CC) $(CFLAGS) $^ -o $@
+		$(CC) $(CFLAGS) $^ -o $@
 
 %.o	:	%.c
-			$(CC) $(CFLAGS) -c $< -o $@
+		$(CC) $(CFLAGS) -c $< -o $@
 
 clean	:
-			$(RM) $(OBJS)
+		$(RM) $(OBJS)
 
 fclean	:	clean
-			$(RM) $(NAME)
+		$(RM) $(NAME)
 
-re		:	fclean all
+re	:	fclean all
