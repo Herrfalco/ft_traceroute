@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/25 19:41:58 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/01 11:48:41 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/02 12:47:23 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,6 @@ typedef enum					e_icmp_type {
 	ICMP_ADDRESSREPLY			= 18,
 }								t_icmp_type;
 
-/*
 typedef enum					e_ur_code {
 	ICMP_NET_UNREACH			= 0,
 	ICMP_HOST_UNREACH			= 1,
@@ -60,6 +59,5 @@ typedef enum					e_te_code {
 	ICMP_EXC_TTL				= 0,
 	ICMP_EXC_FRAGTIME			= 1,
 }								t_te_code;
-*/
 
 #endif //ICMP_H

@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/01 10:06:59 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/01 16:39:47 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/02 13:12:00 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,18 +19,27 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <limits.h>
+#include <sys/time.h>
+#include <stdarg.h>
 
 #include "icmp.h"
 
 #define	ICMP_FILTER			1
 
+#define STDOUT				1
+
 /*
 #define HDR_SZ				8
 */
+#define IP_HDR_SZ			20
 #define BODY_SZ				56 
+#define BUFF_SZ				64
+#define UNR_ERR				"NHPPFS**U**TTXXX"
 
 #define MAX_HOP				64
 #define PROB_NB				3
+#define SEL_TIMO_MS			500
+#define RESP_TIMO_MS		3000
 
 #define FLGS				"hV"
 #define OPT_SZ				2
@@ -58,6 +67,7 @@ typedef enum				e_flag {
 
 typedef enum				e_err {
 	E_NO,
+	E_SEL,
 //	E_ARG_NB,
 	E_PERM,
 	E_TARG,
@@ -69,7 +79,8 @@ typedef enum				e_err {
 	E_ARG,
 //	E_DUP,
 //	E_NO_MATCH,
-//	E_BCK_TIME,
+	E_BCK_TIME,
+	E_RESP,
 }							t_err;
 
 typedef struct					s_targ {
@@ -81,11 +92,18 @@ typedef struct					s_targ {
 typedef struct					s_icmp_pkt {
 	uint8_t						type;
 	uint8_t						code;
-	int16_t						sum;
+	uint16_t					sum;
 	uint16_t					id;
 	uint16_t					seq;
 	uint8_t						body[BODY_SZ];
 } __attribute__((packed))		t_icmp_pkt;
+
+typedef struct					s_ip_pkt {
+	uint8_t						ip_hdr[IP_HDR_SZ - 8];
+	uint32_t					ip_src;
+	uint32_t					ip_dst;
+	t_icmp_pkt					icmp_pkt;
+} __attribute__((packed))		t_ip_pkt;
 
 typedef struct					s_args {
 	size_t						flags;
@@ -97,7 +115,6 @@ typedef struct					s_glob {
 	t_targ						targ;
 	int							sock;
 	t_icmp_pkt					pkt;
-	size_t						r_count;
 	t_args						args;
 }								t_glob;
 
