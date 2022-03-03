@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/03 08:01:25 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/03 08:36:15 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/03 08:43:24 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ void			send_probes(t_glob *glob, t_opts *opts, struct timeval *sel_timo, unsigne
 	}
 }
 
-t_bool		recv_data(t_glob *glob, struct timeval *prob_start, t_rec_ret *ret, t_bool first) {
+static t_bool	recv_data(t_glob *glob, struct timeval *prob_start, t_rec_ret *ret, t_bool first) {
 	t_rec_data			r_dat = { 0 };
 	struct timeval		duration = { 0 };
 
