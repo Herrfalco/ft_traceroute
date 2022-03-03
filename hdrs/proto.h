@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/02 18:18:52 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/02 18:33:39 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/03 08:03:13 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,9 @@ uint16_t		checksum(void *body, int size);
 int				ft_printf(char *form, ...);
 struct timeval	until_now(struct timeval start);
 
-t_bool			flag_set(t_flag flg, t_glob *glob);
-t_bool			opt_set(t_flag flg, t_glob *glob, unsigned int *val);
-t_bool			parse_arg(char **arg, t_glob *glob);
+void			get_args(t_glob *glob, t_opts *opts, int argc, char ***argv);
+
+void			send_probes(t_glob *glob, t_opts *opts, struct timeval *sel_timo, unsigned int hop);
+t_rec_ret		recv_probes(t_glob *glob, t_opts *opts, struct timeval *sel_timo);
 
 #endif //PROTO_H

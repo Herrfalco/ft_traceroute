@@ -1,7 +1,8 @@
 NAME	=	ft_traceroute
-SRCS	=	args.c \
-		ft_traceroute.c \
-		utils.c
+SRCS	=	srcs/args.c \
+		srcs/ft_traceroute.c \
+		srcs/probes.c \
+		srcs/utils.c
 OBJS	=	$(SRCS:.c=.o)
 CC	=	gcc
 CFLAGS	=	-Wall -Wextra -Werror

@@ -6,11 +6,11 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/02 18:22:00 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/02 18:33:06 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/03 08:08:36 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "header.h"
+#include "../hdrs/header.h"
 
 void			error(t_err ret, char *fnc, char *msg, char *quote) {
 	fprintf(stderr, "Error: ");	

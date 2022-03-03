@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/02 18:26:58 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/02 18:57:55 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/03/03 07:41:53 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,5 +47,24 @@ typedef struct					s_glob {
 	t_icmp_pkt					pkt;
 	t_args						args;
 }								t_glob;
+
+typedef struct					s_opts {
+	unsigned int				ttl;
+	unsigned int				max_hop;
+	unsigned int				prob_nb;
+	unsigned int				resp_timo;
+}								t_opts;
+
+typedef struct					s_rec_ret {
+	t_bool						found;
+	t_err						err;
+}								t_rec_ret;
+
+typedef struct					s_rec_data {
+	t_ip_pkt					pkt;
+	struct sockaddr				from;
+	socklen_t					from_sz;
+	t_icmp_pkt					*base;
+}								t_rec_data;
 
 #endif //STRUCT_H
