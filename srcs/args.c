@@ -6,7 +6,7 @@
 /*   By: fcadet <fcadet@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/03/02 18:19:37 by fcadet            #+#    #+#             */
-/*   Updated: 2022/03/03 08:08:02 by fcadet           ###   ########.fr       */
+/*   Updated: 2022/08/31 16:38:10 by fcadet           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,9 @@ static t_bool		flag_set(t_flag flg, t_glob *glob) {
 	return (!!(glob->args.flags & (0x1 << flg)));
 }
 
-static t_bool		opt_set(t_flag flg, t_glob *glob, unsigned int *val) {
-	if (val && glob->args.opts_flags & (0x1 << flg)) {
-		*val = glob->args.opts[flg];
+static t_bool		opt_set(t_opt opt, t_glob *glob, unsigned int *val) {
+	if (val && glob->args.opts_flags & (0x1 << opt)) {
+		*val = glob->args.opts[opt];
 		return (TRUE);
 	}
 	return (FALSE);
